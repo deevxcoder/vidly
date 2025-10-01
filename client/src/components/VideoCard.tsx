@@ -48,6 +48,7 @@ export default function VideoCard({
   onDelete,
 }: VideoCardProps) {
   const [imageError, setImageError] = useState(false);
+  const statusInfo = statusConfig[status] || { label: status, className: "bg-muted text-muted-foreground" };
   
   return (
     <Card className="overflow-hidden hover-elevate group" data-testid={`card-video-${id}`}>
@@ -71,8 +72,8 @@ export default function VideoCard({
           </div>
         </div>
         <div className="absolute top-2 right-2">
-          <Badge className={statusConfig[status].className} data-testid={`badge-status-${id}`}>
-            {statusConfig[status].label}
+          <Badge className={statusInfo.className} data-testid={`badge-status-${id}`}>
+            {statusInfo.label}
           </Badge>
         </div>
         <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
