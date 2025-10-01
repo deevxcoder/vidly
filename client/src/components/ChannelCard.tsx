@@ -1,4 +1,4 @@
-import { Users, Video, CheckCircle2, XCircle } from "lucide-react";
+import { Users, Video, CheckCircle2, XCircle, ExternalLink, RefreshCw, Settings } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,10 +10,14 @@ export interface ChannelCardProps {
   avatar: string;
   subscribers: string;
   videoCount: number;
+  publishedVideosCount?: number;
   connected: boolean;
   lastSync?: string;
+  channelId?: string;
+  description?: string;
   onManage?: () => void;
   onDisconnect?: () => void;
+  onRefresh?: () => void;
 }
 
 export default function ChannelCard({
@@ -22,26 +26,34 @@ export default function ChannelCard({
   avatar,
   subscribers,
   videoCount,
+  publishedVideosCount = 0,
   connected,
   lastSync,
+  channelId,
+  description,
   onManage,
   onDisconnect,
+  onRefresh,
 }: ChannelCardProps) {
+  const youtubeUrl = channelId ? `https://youtube.com/channel/${channelId}` : null;
+
   return (
     <Card className="p-6 hover-elevate" data-testid={`card-channel-${id}`}>
       <div className="flex items-start gap-4">
-        <Avatar className="w-16 h-16">
+        <Avatar className="w-20 h-20">
           <AvatarImage src={avatar} alt={name} />
           <AvatarFallback>{name.charAt(0)}</AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-medium truncate" data-testid={`text-channel-name-${id}`}>
+              <h3 className="text-lg font-semibold truncate mb-1" data-testid={`text-channel-name-${id}`}>
                 {name}
               </h3>
-              {lastSync && (
-                <p className="text-sm text-muted-foreground">Last synced {lastSync}</p>
+              {description && (
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                  {description}
+                </p>
               )}
             </div>
             <Badge
@@ -60,26 +72,71 @@ export default function ChannelCard({
               {connected ? "Connected" : "Disconnected"}
             </Badge>
           </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-            <div className="flex items-center gap-1">
-              <Users className="w-4 h-4" />
-              {subscribers}
+          
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="flex items-center gap-2 text-sm">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <div>
+                <div className="font-medium">{subscribers}</div>
+                <div className="text-xs text-muted-foreground">Subscribers</div>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Video className="w-4 h-4" />
-              {videoCount} videos
+            <div className="flex items-center gap-2 text-sm">
+              <Video className="w-4 h-4 text-muted-foreground" />
+              <div>
+                <div className="font-medium">{videoCount}</div>
+                <div className="text-xs text-muted-foreground">Total Videos</div>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={onManage}
-              variant="outline"
-              size="sm"
-              data-testid={`button-manage-${id}`}
-            >
-              Manage
-            </Button>
-            {connected && (
+
+          {publishedVideosCount > 0 && (
+            <div className="text-sm text-muted-foreground mb-3">
+              <span className="font-medium text-foreground">{publishedVideosCount}</span> video{publishedVideosCount !== 1 ? 's' : ''} published from this app
+            </div>
+          )}
+
+          {lastSync && (
+            <div className="text-xs text-muted-foreground mb-3">
+              Last synced {lastSync}
+            </div>
+          )}
+          
+          <div className="flex items-center gap-2 flex-wrap">
+            {youtubeUrl && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(youtubeUrl, '_blank')}
+                data-testid={`button-view-youtube-${id}`}
+              >
+                <ExternalLink className="w-4 h-4 mr-1" />
+                View on YouTube
+              </Button>
+            )}
+            {onRefresh && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRefresh}
+                data-testid={`button-refresh-${id}`}
+              >
+                <RefreshCw className="w-4 h-4 mr-1" />
+                Refresh
+              </Button>
+            )}
+            {onManage && (
+              <Button
+                onClick={onManage}
+                variant="ghost"
+                size="sm"
+                data-testid={`button-manage-${id}`}
+              >
+                <Settings className="w-4 h-4 mr-1" />
+                Settings
+              </Button>
+            )}
+            {connected && onDisconnect && (
               <Button
                 onClick={onDisconnect}
                 variant="ghost"
