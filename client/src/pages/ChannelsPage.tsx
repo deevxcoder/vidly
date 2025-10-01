@@ -18,7 +18,8 @@ import {
   Users,
   Video,
   Search,
-  CheckCircle2
+  CheckCircle2,
+  Eye
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -236,6 +237,9 @@ export default function ChannelsPage() {
   const totalPublished = channelsWithStats.reduce((sum, ch) => 
     sum + ch.publishedVideosCount, 0
   );
+  const totalViews = (videos || []).reduce((sum, video) => 
+    sum + parseInt(video.viewCount || '0'), 0
+  );
 
   return (
     <div className="space-y-6">
@@ -287,7 +291,7 @@ export default function ChannelsPage() {
 
       {channels && channels.length > 0 && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -318,6 +322,17 @@ export default function ChannelsPage() {
                 <div>
                   <div className="text-2xl font-bold">{totalPublished}</div>
                   <div className="text-sm text-muted-foreground">Videos Published</div>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-chart-3/10 flex items-center justify-center">
+                  <Eye className="w-5 h-5 text-chart-3" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{totalViews.toLocaleString()}</div>
+                  <div className="text-sm text-muted-foreground">Total Views</div>
                 </div>
               </div>
             </Card>

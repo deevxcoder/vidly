@@ -96,6 +96,7 @@ export const videos = pgTable("videos", {
   thumbnailUrl: varchar("thumbnail_url"),
   fileSize: varchar("file_size"),
   duration: varchar("duration"),
+  viewCount: varchar("view_count"),
   status: varchar("status").notNull().default("draft"),
   tags: text("tags").array(),
   publishedChannels: text("published_channels").array(),
