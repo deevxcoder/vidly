@@ -114,10 +114,29 @@ export default function ChannelsPage() {
     }
   };
 
-  const handleBulkDisconnect = () => {
+  const handleBulkDisconnect = async () => {
     if (selectedChannelIds.size === 0) return;
     if (confirm(`Are you sure you want to disconnect ${selectedChannelIds.size} channel(s)?`)) {
-      selectedChannelIds.forEach(id => disconnectMutation.mutate(id));
+      const channelIdsArray = Array.from(selectedChannelIds);
+      try {
+        await Promise.all(
+          channelIdsArray.map(id => 
+            apiRequest('DELETE', `/api/youtube/channels/${id}`)
+          )
+        );
+        queryClient.invalidateQueries({ queryKey: ['/api/youtube/channels'] });
+        setSelectedChannelIds(new Set());
+        toast({
+          title: "Channels Disconnected",
+          description: `Successfully disconnected ${channelIdsArray.length} channel(s)`,
+        });
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Disconnection Failed",
+          description: error instanceof Error ? error.message : "Failed to disconnect channels",
+        });
+      }
     }
   };
 
