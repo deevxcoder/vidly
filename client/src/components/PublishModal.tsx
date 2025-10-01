@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2, Youtube } from "lucide-react";
+import { CheckCircle2, Youtube, Clock, Globe, Lock, Eye } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,12 +13,20 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
 
 export interface Channel {
   id: string;
   name: string;
   avatar: string;
   subscribers: string;
+}
+
+export interface PublishOptions {
+  channelIds: string[];
+  privacyStatus: 'public' | 'unlisted' | 'private';
+  scheduledTime?: string;
 }
 
 export interface PublishModalProps {
@@ -30,7 +38,7 @@ export interface PublishModalProps {
     thumbnail: string;
   };
   channels: Channel[];
-  onPublish?: (channelIds: string[]) => void;
+  onPublish?: (options: PublishOptions) => void;
 }
 
 export default function PublishModal({
@@ -41,6 +49,9 @@ export default function PublishModal({
   onPublish,
 }: PublishModalProps) {
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
+  const [privacyStatus, setPrivacyStatus] = useState<'public' | 'unlisted' | 'private'>('public');
+  const [enableScheduling, setEnableScheduling] = useState(false);
+  const [scheduledTime, setScheduledTime] = useState('');
 
   const toggleChannel = (channelId: string) => {
     setSelectedChannels((prev) =>
@@ -59,8 +70,12 @@ export default function PublishModal({
   };
 
   const handlePublish = () => {
-    onPublish?.(selectedChannels);
-    console.log("Publishing to channels:", selectedChannels);
+    const publishOptions: PublishOptions = {
+      channelIds: selectedChannels,
+      privacyStatus,
+      scheduledTime: enableScheduling && scheduledTime ? scheduledTime : undefined,
+    };
+    onPublish?.(publishOptions);
     onOpenChange(false);
   };
 
@@ -83,6 +98,81 @@ export default function PublishModal({
             />
             <div className="flex-1 min-w-0">
               <p className="font-medium line-clamp-2">{video.title}</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <Label className="text-base font-semibold mb-3 block">Privacy Settings</Label>
+              <RadioGroup value={privacyStatus} onValueChange={(value: any) => !enableScheduling && setPrivacyStatus(value)} disabled={enableScheduling}>
+                <div className={`flex items-center space-x-2 p-3 rounded-lg ${!enableScheduling ? 'hover-elevate cursor-pointer' : 'opacity-50 cursor-not-allowed'}`} onClick={() => !enableScheduling && setPrivacyStatus('public')} data-testid="radio-privacy-public">
+                  <RadioGroupItem value="public" id="public" disabled={enableScheduling} data-testid="radio-item-public" />
+                  <Globe className="w-4 h-4 text-muted-foreground" />
+                  <div className="flex-1">
+                    <Label htmlFor="public" className={`font-medium ${!enableScheduling ? 'cursor-pointer' : 'cursor-not-allowed'}`}>Public</Label>
+                    <p className="text-sm text-muted-foreground">Anyone can search for and view</p>
+                  </div>
+                </div>
+                <div className={`flex items-center space-x-2 p-3 rounded-lg ${!enableScheduling ? 'hover-elevate cursor-pointer' : 'opacity-50 cursor-not-allowed'}`} onClick={() => !enableScheduling && setPrivacyStatus('unlisted')} data-testid="radio-privacy-unlisted">
+                  <RadioGroupItem value="unlisted" id="unlisted" disabled={enableScheduling} data-testid="radio-item-unlisted" />
+                  <Eye className="w-4 h-4 text-muted-foreground" />
+                  <div className="flex-1">
+                    <Label htmlFor="unlisted" className={`font-medium ${!enableScheduling ? 'cursor-pointer' : 'cursor-not-allowed'}`}>Unlisted</Label>
+                    <p className="text-sm text-muted-foreground">Anyone with the link can view</p>
+                  </div>
+                </div>
+                <div className={`flex items-center space-x-2 p-3 rounded-lg ${!enableScheduling ? 'hover-elevate cursor-pointer' : 'opacity-50 cursor-not-allowed'}`} onClick={() => !enableScheduling && setPrivacyStatus('private')} data-testid="radio-privacy-private">
+                  <RadioGroupItem value="private" id="private" disabled={enableScheduling} data-testid="radio-item-private" />
+                  <Lock className="w-4 h-4 text-muted-foreground" />
+                  <div className="flex-1">
+                    <Label htmlFor="private" className={`font-medium ${!enableScheduling ? 'cursor-pointer' : 'cursor-not-allowed'}`}>Private</Label>
+                    <p className="text-sm text-muted-foreground">Only you can view</p>
+                  </div>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="schedule"
+                  checked={enableScheduling}
+                  onCheckedChange={(checked) => {
+                    setEnableScheduling(!!checked);
+                    if (checked) {
+                      setPrivacyStatus('private');
+                    }
+                  }}
+                  data-testid="checkbox-enable-scheduling"
+                />
+                <Label htmlFor="schedule" className="font-medium cursor-pointer">
+                  Schedule for later
+                </Label>
+              </div>
+              
+              {enableScheduling && (
+                <div className="space-y-2 pl-6">
+                  <div className="p-3 bg-muted rounded-md text-sm text-muted-foreground">
+                    <Lock className="w-4 h-4 inline mr-1" />
+                    Note: YouTube requires scheduled videos to be Private initially. The video will be published at your scheduled time.
+                  </div>
+                  <Label htmlFor="scheduled-time" className="text-sm">
+                    <Clock className="w-4 h-4 inline mr-1" />
+                    Publish Date & Time
+                  </Label>
+                  <Input
+                    id="scheduled-time"
+                    type="datetime-local"
+                    value={scheduledTime}
+                    onChange={(e) => setScheduledTime(e.target.value)}
+                    data-testid="input-scheduled-time"
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Video will be published at the scheduled time
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -151,11 +241,20 @@ export default function PublishModal({
           </Button>
           <Button
             onClick={handlePublish}
-            disabled={selectedChannels.length === 0}
+            disabled={selectedChannels.length === 0 || (enableScheduling && !scheduledTime)}
             data-testid="button-confirm-publish"
           >
-            <Youtube className="w-4 h-4 mr-2" />
-            Publish to {selectedChannels.length} Channel{selectedChannels.length !== 1 ? "s" : ""}
+            {enableScheduling ? (
+              <>
+                <Clock className="w-4 h-4 mr-2" />
+                Schedule for {selectedChannels.length} Channel{selectedChannels.length !== 1 ? "s" : ""}
+              </>
+            ) : (
+              <>
+                <Youtube className="w-4 h-4 mr-2" />
+                Publish to {selectedChannels.length} Channel{selectedChannels.length !== 1 ? "s" : ""}
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

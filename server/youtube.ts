@@ -128,6 +128,62 @@ export async function uploadVideoToYouTube(
   return response.data;
 }
 
+export async function scheduleVideoUpload(
+  accessToken: string,
+  videoFile: any,
+  title: string,
+  description: string,
+  scheduledTime: string,
+  privacyStatus: 'private' | 'public' | 'unlisted' = 'private',
+  tags?: string[],
+  thumbnailPath?: string
+) {
+  const youtube = await getYoutubeService(accessToken);
+  
+  // Ensure scheduledTime is in RFC3339 format with timezone
+  const scheduledDate = new Date(scheduledTime);
+  const rfc3339Time = scheduledDate.toISOString();
+  
+  // Schedule a regular upload (non-premiere)
+  // IMPORTANT: YouTube API limitation - when using publishAt (scheduled uploads),
+  // the video MUST be private. The privacyStatus parameter is accepted for API
+  // consistency but is not used. The video will remain private after the scheduled
+  // publish time. To change privacy after publishing, a separate API call would be needed.
+  const videoResponse = await youtube.videos.insert({
+    part: ['snippet', 'status'],
+    requestBody: {
+      snippet: {
+        title,
+        description,
+        tags: tags && tags.length > 0 ? tags : undefined,
+      },
+      status: {
+        privacyStatus: 'private', // Required by YouTube API when using publishAt
+        publishAt: rfc3339Time,
+        selfDeclaredMadeForKids: false,
+      },
+    },
+    media: {
+      body: videoFile,
+    },
+  });
+  
+  const videoId = videoResponse.data.id;
+  if (!videoId) {
+    throw new Error('Failed to upload scheduled video');
+  }
+  
+  // Upload thumbnail if provided
+  if (thumbnailPath) {
+    await uploadThumbnail(accessToken, videoId, thumbnailPath);
+  }
+  
+  return {
+    videoId,
+    scheduledTime: rfc3339Time,
+  };
+}
+
 export async function scheduleVideoPremiere(
   accessToken: string,
   videoFile: any,

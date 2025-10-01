@@ -478,6 +478,8 @@ export function registerRoutes(app: Express): Server {
 
   const publishVideoSchema = z.object({
     channelIds: z.array(z.string()).nonempty(),
+    privacyStatus: z.enum(['public', 'unlisted', 'private']).optional().default('public'),
+    scheduledTime: z.string().optional(),
   });
 
   // Publish video to YouTube channels
@@ -519,10 +521,27 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
-      const { uploadVideoToYouTube, refreshAccessToken, getOAuth2Client } = await import('./youtube');
+      // Validate scheduled time if provided
+      if (validated.scheduledTime) {
+        const scheduledDate = new Date(validated.scheduledTime);
+        const now = new Date();
+        if (scheduledDate <= now) {
+          return res.status(400).json({ message: "Scheduled time must be in the future" });
+        }
+        
+        // YouTube API requires scheduled videos to be private
+        if (validated.privacyStatus !== 'private') {
+          return res.status(400).json({ 
+            message: "YouTube requires scheduled videos to be Private. Please select Private privacy status or publish immediately with your preferred privacy setting." 
+          });
+        }
+      }
+
+      const { uploadVideoToYouTube, scheduleVideoUpload, refreshAccessToken, getOAuth2Client } = await import('./youtube');
       const { createReadStream } = await import('fs');
       const publishedChannels: string[] = [];
       const youtubeVideoIds: Record<string, string> = {};
+      const isScheduled = !!validated.scheduledTime;
       
       for (const channelId of validated.channelIds) {
         const token = await storage.getYoutubeTokenByChannelId(channelId);
@@ -555,19 +574,39 @@ export function registerRoutes(app: Express): Server {
           const videoStream = createReadStream(getVideoFilePath(video.filePath));
           const thumbnailPath = video.thumbnailUrl ? getVideoFilePath(video.thumbnailUrl.replace('/uploads/', '')) : undefined;
           
-          const result = await uploadVideoToYouTube(
-            accessToken,
-            videoStream,
-            video.title,
-            video.description || '',
-            'private',
-            video.tags || undefined,
-            thumbnailPath
-          );
+          let result: any;
           
-          if (result.id) {
-            publishedChannels.push(channelId);
-            youtubeVideoIds[channelId] = result.id;
+          if (isScheduled) {
+            // Use scheduled upload
+            result = await scheduleVideoUpload(
+              accessToken,
+              videoStream,
+              video.title,
+              video.description || '',
+              validated.scheduledTime!,
+              validated.privacyStatus,
+              video.tags || undefined,
+              thumbnailPath
+            );
+            if (result.videoId) {
+              publishedChannels.push(channelId);
+              youtubeVideoIds[channelId] = result.videoId;
+            }
+          } else {
+            // Immediate upload
+            result = await uploadVideoToYouTube(
+              accessToken,
+              videoStream,
+              video.title,
+              video.description || '',
+              validated.privacyStatus,
+              video.tags || undefined,
+              thumbnailPath
+            );
+            if (result.id) {
+              publishedChannels.push(channelId);
+              youtubeVideoIds[channelId] = result.id;
+            }
           }
         } catch (error) {
           console.error(`Error publishing to channel ${channelId}:`, error);
@@ -578,7 +617,7 @@ export function registerRoutes(app: Express): Server {
       const firstVideoId = Object.values(youtubeVideoIds)[0];
       
       await storage.updateVideo(id, {
-        status: 'published',
+        status: isScheduled ? 'scheduled' : 'published',
         publishedChannels,
         youtubeVideoId: firstVideoId,
       });
@@ -591,9 +630,11 @@ export function registerRoutes(app: Express): Server {
       }
       
       res.json({ 
-        message: "Video published successfully", 
+        message: isScheduled ? "Video scheduled successfully" : "Video published successfully", 
         publishedChannels,
-        youtubeVideoIds 
+        youtubeVideoIds,
+        scheduledTime: validated.scheduledTime,
+        privacyStatus: validated.privacyStatus
       });
     } catch (error) {
       if (error instanceof z.ZodError) {

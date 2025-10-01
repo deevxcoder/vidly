@@ -3,7 +3,7 @@ import { Video, Upload, Youtube, CheckCircle, Plus, Loader2 } from "lucide-react
 import StatsCard from "@/components/StatsCard";
 import VideoCard from "@/components/VideoCard";
 import ChannelCard from "@/components/ChannelCard";
-import PublishModal from "@/components/PublishModal";
+import PublishModal, { PublishOptions } from "@/components/PublishModal";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -26,14 +26,17 @@ export default function Dashboard() {
   });
 
   const publishMutation = useMutation({
-    mutationFn: async ({ videoId, channelIds, filePath }: { videoId: string; channelIds: string[]; filePath: string }) => {
-      return await apiRequest('POST', `/api/videos/${videoId}/publish`, { channelIds, filePath });
+    mutationFn: async ({ videoId, options }: { videoId: string; options: PublishOptions }) => {
+      return await apiRequest('POST', `/api/videos/${videoId}/publish`, options);
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/videos'] });
+      const isScheduled = !!data.scheduledTime;
       toast({
-        title: "Video Published",
-        description: "Your video has been published successfully to selected channels",
+        title: isScheduled ? "Video Scheduled" : "Video Published",
+        description: isScheduled 
+          ? "Your video has been scheduled successfully" 
+          : "Your video has been published successfully to selected channels",
       });
       setPublishModalOpen(false);
     },
@@ -71,12 +74,11 @@ export default function Dashboard() {
     setPublishModalOpen(true);
   };
 
-  const handlePublish = (channelIds: string[]) => {
+  const handlePublish = (options: PublishOptions) => {
     if (selectedVideo) {
       publishMutation.mutate({
         videoId: selectedVideo.id,
-        channelIds,
-        filePath: selectedVideo.filePath,
+        options,
       });
     }
   };
