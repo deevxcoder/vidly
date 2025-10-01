@@ -15,6 +15,7 @@ export interface ChannelCardProps {
   lastSync?: string;
   channelId?: string;
   description?: string;
+  hasActivity?: boolean;
   onManage?: () => void;
   onDisconnect?: () => void;
   onRefresh?: () => void;
@@ -31,6 +32,7 @@ export default function ChannelCard({
   lastSync,
   channelId,
   description,
+  hasActivity = false,
   onManage,
   onDisconnect,
   onRefresh,
@@ -40,10 +42,17 @@ export default function ChannelCard({
   return (
     <Card className="p-6 hover-elevate" data-testid={`card-channel-${id}`}>
       <div className="flex items-start gap-4">
-        <Avatar className="w-20 h-20">
-          <AvatarImage src={avatar} alt={name} />
-          <AvatarFallback>{name.charAt(0)}</AvatarFallback>
-        </Avatar>
+        <div className="relative">
+          <Avatar className="w-20 h-20">
+            <AvatarImage src={avatar} alt={name} />
+            <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+          </Avatar>
+          {hasActivity && (
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-chart-1 rounded-full flex items-center justify-center border-2 border-background">
+              <CheckCircle2 className="w-4 h-4 text-white" />
+            </div>
+          )}
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex-1 min-w-0">
@@ -91,8 +100,16 @@ export default function ChannelCard({
           </div>
 
           {publishedVideosCount > 0 && (
-            <div className="text-sm text-muted-foreground mb-3">
-              <span className="font-medium text-foreground">{publishedVideosCount}</span> video{publishedVideosCount !== 1 ? 's' : ''} published from this app
+            <div className="flex items-center gap-2 mb-3">
+              <div className="text-sm">
+                <span className="font-medium text-foreground">{publishedVideosCount}</span> 
+                <span className="text-muted-foreground"> video{publishedVideosCount !== 1 ? 's' : ''} published from this app</span>
+              </div>
+              {hasActivity && (
+                <Badge variant="outline" className="text-xs border-chart-1 text-chart-1">
+                  Active
+                </Badge>
+              )}
             </div>
           )}
 
