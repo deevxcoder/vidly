@@ -19,6 +19,11 @@ import {
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -401,40 +406,60 @@ export default function ChannelsPage() {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           {youtubeUrl && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => window.open(youtubeUrl, '_blank')}
-                              data-testid={`button-view-youtube-${channel.id}`}
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => window.open(youtubeUrl, '_blank')}
+                                  data-testid={`button-view-youtube-${channel.id}`}
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>View on YouTube</TooltipContent>
+                            </Tooltip>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRefresh(channel.id)}
-                            data-testid={`button-refresh-${channel.id}`}
-                          >
-                            <RefreshCw className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleManage(channel.id)}
-                            data-testid={`button-manage-${channel.id}`}
-                          >
-                            <Settings className="w-4 h-4" />
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRefresh(channel.id)}
+                                data-testid={`button-refresh-${channel.id}`}
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Refresh channel data</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleManage(channel.id)}
+                                data-testid={`button-manage-${channel.id}`}
+                              >
+                                <Settings className="w-4 h-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Channel settings</TooltipContent>
+                          </Tooltip>
                           {channel.isConnected && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDisconnect(channel.id)}
-                              data-testid={`button-disconnect-${channel.id}`}
-                            >
-                              <span className="text-xs">✕</span>
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDisconnect(channel.id)}
+                                  data-testid={`button-disconnect-${channel.id}`}
+                                >
+                                  <span className="text-xs">✕</span>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Disconnect channel</TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
                       </TableCell>
