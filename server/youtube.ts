@@ -48,8 +48,8 @@ export async function refreshAccessToken(oauth2Client: OAuth2Client, refreshToke
   return credentials;
 }
 
-export async function getYoutubeService(accessToken: string) {
-  const oauth2Client = getOAuth2Client();
+export async function getYoutubeService(accessToken: string, clientId?: string, clientSecret?: string) {
+  const oauth2Client = getOAuth2Client(clientId, clientSecret);
   oauth2Client.setCredentials({ access_token: accessToken });
   
   return google.youtube({
@@ -58,8 +58,8 @@ export async function getYoutubeService(accessToken: string) {
   });
 }
 
-export async function getUserChannels(accessToken: string) {
-  const youtube = await getYoutubeService(accessToken);
+export async function getUserChannels(accessToken: string, clientId?: string, clientSecret?: string) {
+  const youtube = await getYoutubeService(accessToken, clientId, clientSecret);
   
   const response = await youtube.channels.list({
     part: ['snippet', 'statistics'],
@@ -72,9 +72,11 @@ export async function getUserChannels(accessToken: string) {
 export async function uploadThumbnail(
   accessToken: string,
   videoId: string,
-  thumbnailPath: string
+  thumbnailPath: string,
+  clientId?: string,
+  clientSecret?: string
 ) {
-  const youtube = await getYoutubeService(accessToken);
+  const youtube = await getYoutubeService(accessToken, clientId, clientSecret);
   const { createReadStream } = await import('fs');
   
   try {
@@ -99,9 +101,11 @@ export async function uploadVideoToYouTube(
   description: string,
   privacyStatus: 'private' | 'public' | 'unlisted' = 'private',
   tags?: string[],
-  thumbnailPath?: string
+  thumbnailPath?: string,
+  clientId?: string,
+  clientSecret?: string
 ) {
-  const youtube = await getYoutubeService(accessToken);
+  const youtube = await getYoutubeService(accessToken, clientId, clientSecret);
   
   const response = await youtube.videos.insert({
     part: ['snippet', 'status'],
@@ -122,7 +126,7 @@ export async function uploadVideoToYouTube(
   
   // Upload thumbnail if provided
   if (thumbnailPath && response.data.id) {
-    await uploadThumbnail(accessToken, response.data.id, thumbnailPath);
+    await uploadThumbnail(accessToken, response.data.id, thumbnailPath, clientId, clientSecret);
   }
   
   return response.data;
@@ -136,9 +140,11 @@ export async function scheduleVideoUpload(
   scheduledTime: string,
   privacyStatus: 'private' | 'public' | 'unlisted' = 'private',
   tags?: string[],
-  thumbnailPath?: string
+  thumbnailPath?: string,
+  clientId?: string,
+  clientSecret?: string
 ) {
-  const youtube = await getYoutubeService(accessToken);
+  const youtube = await getYoutubeService(accessToken, clientId, clientSecret);
   
   // Ensure scheduledTime is in RFC3339 format with timezone
   const scheduledDate = new Date(scheduledTime);
@@ -175,7 +181,7 @@ export async function scheduleVideoUpload(
   
   // Upload thumbnail if provided
   if (thumbnailPath) {
-    await uploadThumbnail(accessToken, videoId, thumbnailPath);
+    await uploadThumbnail(accessToken, videoId, thumbnailPath, clientId, clientSecret);
   }
   
   return {
@@ -191,9 +197,11 @@ export async function scheduleVideoPremiere(
   description: string,
   scheduledStartTime: string,
   tags?: string[],
-  thumbnailPath?: string
+  thumbnailPath?: string,
+  clientId?: string,
+  clientSecret?: string
 ) {
-  const youtube = await getYoutubeService(accessToken);
+  const youtube = await getYoutubeService(accessToken, clientId, clientSecret);
   
   // Ensure scheduledStartTime is in RFC3339 format with timezone
   const scheduledDate = new Date(scheduledStartTime);
@@ -228,7 +236,7 @@ export async function scheduleVideoPremiere(
   
   // Upload thumbnail if provided
   if (thumbnailPath) {
-    await uploadThumbnail(accessToken, videoId, thumbnailPath);
+    await uploadThumbnail(accessToken, videoId, thumbnailPath, clientId, clientSecret);
   }
   
   return {
@@ -242,9 +250,11 @@ export async function createLiveBroadcast(
   title: string,
   description: string,
   scheduledStartTime: string,
-  privacyStatus: 'private' | 'public' | 'unlisted' = 'private'
+  privacyStatus: 'private' | 'public' | 'unlisted' = 'private',
+  clientId?: string,
+  clientSecret?: string
 ) {
-  const youtube = await getYoutubeService(accessToken);
+  const youtube = await getYoutubeService(accessToken, clientId, clientSecret);
   
   const response = await youtube.liveBroadcasts.insert({
     part: ['snippet', 'status', 'contentDetails'],
@@ -270,9 +280,11 @@ export async function createLiveBroadcast(
 
 export async function createLiveStream(
   accessToken: string,
-  title: string
+  title: string,
+  clientId?: string,
+  clientSecret?: string
 ) {
-  const youtube = await getYoutubeService(accessToken);
+  const youtube = await getYoutubeService(accessToken, clientId, clientSecret);
   
   const response = await youtube.liveStreams.insert({
     part: ['snippet', 'cdn'],
@@ -294,9 +306,11 @@ export async function createLiveStream(
 export async function bindBroadcastToStream(
   accessToken: string,
   broadcastId: string,
-  streamId: string
+  streamId: string,
+  clientId?: string,
+  clientSecret?: string
 ) {
-  const youtube = await getYoutubeService(accessToken);
+  const youtube = await getYoutubeService(accessToken, clientId, clientSecret);
   
   const response = await youtube.liveBroadcasts.bind({
     part: ['id', 'snippet', 'status'],
@@ -310,9 +324,11 @@ export async function bindBroadcastToStream(
 export async function transitionBroadcastStatus(
   accessToken: string,
   broadcastId: string,
-  broadcastStatus: 'testing' | 'live' | 'complete'
+  broadcastStatus: 'testing' | 'live' | 'complete',
+  clientId?: string,
+  clientSecret?: string
 ) {
-  const youtube = await getYoutubeService(accessToken);
+  const youtube = await getYoutubeService(accessToken, clientId, clientSecret);
   
   const response = await youtube.liveBroadcasts.transition({
     part: ['id', 'status'],
@@ -325,9 +341,11 @@ export async function transitionBroadcastStatus(
 
 export async function deleteLiveBroadcast(
   accessToken: string,
-  broadcastId: string
+  broadcastId: string,
+  clientId?: string,
+  clientSecret?: string
 ) {
-  const youtube = await getYoutubeService(accessToken);
+  const youtube = await getYoutubeService(accessToken, clientId, clientSecret);
   
   await youtube.liveBroadcasts.delete({
     id: broadcastId,

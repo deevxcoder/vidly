@@ -308,6 +308,8 @@ export function registerRoutes(app: Express): Server {
           channelId: channel.id,
           accessToken: tokens.access_token!,
           refreshToken: tokens.refresh_token,
+          clientId: credentials.clientId,
+          clientSecret: credentials.clientSecret,
           expiresAt: tokens.expiry_date ? new Date(tokens.expiry_date) : undefined,
           scope: tokens.scope,
         });
@@ -586,7 +588,9 @@ export function registerRoutes(app: Express): Server {
               validated.scheduledTime!,
               validated.privacyStatus,
               video.tags || undefined,
-              thumbnailPath
+              thumbnailPath,
+              token.clientId || undefined,
+              token.clientSecret || undefined
             );
             if (result.videoId) {
               publishedChannels.push(channelId);
@@ -601,7 +605,9 @@ export function registerRoutes(app: Express): Server {
               video.description || '',
               validated.privacyStatus,
               video.tags || undefined,
-              thumbnailPath
+              thumbnailPath,
+              token.clientId || undefined,
+              token.clientSecret || undefined
             );
             if (result.id) {
               publishedChannels.push(channelId);
@@ -703,12 +709,15 @@ export function registerRoutes(app: Express): Server {
         });
       }
       
-      // Check token expiry and refresh if needed
+      // Refresh token if needed
       let accessToken = token.accessToken;
       if (token.expiresAt && new Date(token.expiresAt) <= new Date()) {
         if (token.refreshToken) {
           const { getOAuth2Client, refreshAccessToken } = await import('./youtube');
-          const oauth2Client = getOAuth2Client(credentials.clientId, credentials.clientSecret);
+          const oauth2Client = getOAuth2Client(
+            token.clientId || credentials.clientId,
+            token.clientSecret || credentials.clientSecret
+          );
           const newTokens = await refreshAccessToken(oauth2Client, token.refreshToken);
           accessToken = newTokens.access_token!;
           
@@ -736,7 +745,9 @@ export function registerRoutes(app: Express): Server {
         video.description || '',
         validated.scheduledTime,
         video.tags || undefined,
-        thumbnailPath
+        thumbnailPath,
+        token.clientId || undefined,
+        token.clientSecret || undefined
       );
       
       // Update video with premiere info
@@ -898,7 +909,10 @@ export function registerRoutes(app: Express): Server {
         }
         
         const { getOAuth2Client, refreshAccessToken } = await import('./youtube');
-        const oauth2Client = getOAuth2Client(credentials.clientId, credentials.clientSecret);
+        const oauth2Client = getOAuth2Client(
+          token.clientId || credentials.clientId,
+          token.clientSecret || credentials.clientSecret
+        );
         const newTokens = await refreshAccessToken(oauth2Client, token.refreshToken);
         accessToken = newTokens.access_token!;
         
@@ -916,20 +930,26 @@ export function registerRoutes(app: Express): Server {
         validated.title,
         validated.description || '',
         validated.scheduledStartTime,
-        validated.privacyStatus || 'private'
+        validated.privacyStatus || 'private',
+        token.clientId || undefined,
+        token.clientSecret || undefined
       );
       
       // Create YouTube stream (needed for both RTMP and video types)
       const ytStream = await createLiveStream(
         accessToken,
-        `${validated.title} - Stream`
+        `${validated.title} - Stream`,
+        token.clientId || undefined,
+        token.clientSecret || undefined
       );
       
       // Bind broadcast to stream
       await bindBroadcastToStream(
         accessToken,
         broadcast.id!,
-        ytStream.id!
+        ytStream.id!,
+        token.clientId || undefined,
+        token.clientSecret || undefined
       );
       
       const streamKey = ytStream.cdn?.ingestionInfo?.streamName;
@@ -1017,7 +1037,10 @@ export function registerRoutes(app: Express): Server {
               }
               
               const { getOAuth2Client, refreshAccessToken } = await import('./youtube');
-              const oauth2Client = getOAuth2Client(credentials.clientId, credentials.clientSecret);
+              const oauth2Client = getOAuth2Client(
+                token.clientId || credentials.clientId,
+                token.clientSecret || credentials.clientSecret
+              );
               const newTokens = await refreshAccessToken(oauth2Client, token.refreshToken);
               accessToken = newTokens.access_token!;
               
@@ -1028,7 +1051,12 @@ export function registerRoutes(app: Express): Server {
             }
             
             const { deleteLiveBroadcast } = await import('./youtube');
-            await deleteLiveBroadcast(accessToken, stream.youtubeBroadcastId);
+            await deleteLiveBroadcast(
+              accessToken, 
+              stream.youtubeBroadcastId,
+              token.clientId || undefined,
+              token.clientSecret || undefined
+            );
           }
         } catch (error) {
           console.error("Error deleting YouTube broadcast:", error);

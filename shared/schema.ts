@@ -77,6 +77,8 @@ export const youtubeTokens = pgTable("youtube_tokens", {
   channelId: varchar("channel_id").notNull().references(() => youtubeChannels.id, { onDelete: "cascade" }).unique(),
   accessToken: text("access_token").notNull(),
   refreshToken: text("refresh_token"),
+  clientId: text("client_id"),
+  clientSecret: text("client_secret"),
   expiresAt: timestamp("expires_at"),
   scope: text("scope"),
 });
