@@ -1,43 +1,19 @@
-modules = ["nodejs-20", "web", "postgresql-16"]
+modules = ["nodejs-20", "web"]
 run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
-channel = "stable-24_05"
+channel = "stable-25_05"
 packages = ["ffmpeg-full"]
 
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+run = ["node", "./dist/index.cjs"]
 
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 35813
-externalPort = 3003
-
-[[ports]]
-localPort = 37111
-externalPort = 5000
-
-[[ports]]
-localPort = 39407
-externalPort = 3001
-
-[[ports]]
-localPort = 39991
-externalPort = 3002
-
-[[ports]]
-localPort = 42437
-externalPort = 3000
-
-[[ports]]
-localPort = 44581
-externalPort = 4200
 
 [env]
 PORT = "5000"
